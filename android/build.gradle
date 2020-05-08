@@ -31,4 +31,7 @@ android {
     lintOptions {
         disable 'InvalidPackage'
     }
+    dependencies {
+        compileOnly rootProject.findProject(":flutter_local_notifications")
+    }
 }
