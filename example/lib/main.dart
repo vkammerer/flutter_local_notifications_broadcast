@@ -1,56 +1,89 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
+import 'dart:ui';
 
-import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_local_notifications_broadcast/flutter_local_notifications_broadcast.dart';
 
-void main() => runApp(MyApp());
+final FlutterLocalNotificationsBroadcast flutterLocalNotificationsBroadcast =
+    FlutterLocalNotificationsBroadcast();
 
-class MyApp extends StatefulWidget {
-  @override
-  _MyAppState createState() => _MyAppState();
+NotificationAppLaunchDetails notificationAppLaunchDetails;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  notificationAppLaunchDetails = await flutterLocalNotificationsBroadcast
+      .getNotificationAppLaunchDetails();
+
+  var initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
+  await flutterLocalNotificationsBroadcast.initialize(
+    initializationSettingsAndroid,
+    onSelectNotification: (String payload) async {
+      if (payload != null) {
+        debugPrint('notification payload: ' + payload);
+      }
+    },
+  );
+  runApp(MaterialApp(home: HomePage()));
 }
 
-class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+class PaddedRaisedButton extends StatelessWidget {
+  final String buttonText;
+  final VoidCallback onPressed;
+
+  const PaddedRaisedButton({
+    @required this.buttonText,
+    @required this.onPressed,
+  });
 
   @override
-  void initState() {
-    super.initState();
-    initPlatformState();
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(0.0, 0.0, 0.0, 8.0),
+      child: RaisedButton(child: Text(buttonText), onPressed: onPressed),
+    );
   }
+}
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = await FlutterLocalNotificationsBroadcast.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
-  }
-
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: Text('Plugin example app'),
         ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+        body: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: Center(
+            child: Column(
+              children: <Widget>[
+                PaddedRaisedButton(
+                  buttonText: 'Show plain notification with payload',
+                  onPressed: () async {
+                    await _broadcastNotification();
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
+  }
+
+  Future<void> _broadcastNotification() async {
+    var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+        'your channel id', 'your channel name', 'your channel description',
+        importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
+    await flutterLocalNotificationsBroadcast.broadcast(
+        1,
+        'plain title',
+        'plain body',
+        'com.vincentkammerer.flutter_local_notifications_broadcast_example.ForegroundServiceBroadcastReceiver',
+        notificationDetails: androidPlatformChannelSpecifics,
+        payload: 'item x');
   }
 }
