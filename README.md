@@ -10,19 +10,19 @@ Create a [BroadcastReceiver](https://developer.android.com/reference/android/con
 #### In your Flutter application   
 Pass the class name to the `broadcast` method as in the example below:
 ```dart
-    String androidBroadcastReceiverClassName = "com.vincentkammerer.flutter_local_notifications_broadcast_example.ForegroundServiceBroadcastReceiver";
+String androidBroadcastReceiverClassName = "com.vincentkammerer.flutter_local_notifications_broadcast_example.ForegroundServiceBroadcastReceiver";
 
-    Future<void> _broadcastNotification() async {
-        var androidPlatformChannelSpecifics = AndroidNotificationDetails(
-            'your channel id', 'your channel name', 'your channel description',
-            importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
-        await flutterLocalNotificationsBroadcast.broadcast(
-            1,
-            'plain title',
-            'plain body',
-            androidBroadcastReceiverClassName,
-            notificationDetails: androidPlatformChannelSpecifics,
-            payload: 'item x',
-        );
-  }
+Future<void> _broadcastNotification() async {
+  var androidPlatformChannelSpecifics = AndroidNotificationDetails(
+      'your channel id', 'your channel name', 'your channel description',
+      importance: Importance.Max, priority: Priority.High, ticker: 'ticker');
+  await flutterLocalNotificationsBroadcast.broadcast(
+    1,
+    'plain title',
+    'plain body',
+    androidBroadcastReceiverClassName,
+    notificationDetails: androidPlatformChannelSpecifics,
+    payload: 'item x',
+  );
+}
 ```
