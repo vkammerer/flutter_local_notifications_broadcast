@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_local_notifications/src/helpers.dart';
 
-class FlutterLocalNotificationsBroadcast
-    extends AndroidFlutterLocalNotificationsPlugin {
+import 'helpers.dart';
+
+class FlutterLocalNotificationsBroadcast {
   MethodChannel _channel = MethodChannel(
       "com.vincentkammerer.flutter_local_notifications_broadcast/plugin_channel");
 

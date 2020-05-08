@@ -8,18 +8,23 @@ import 'package:flutter_local_notifications_broadcast/flutter_local_notification
 
 final FlutterLocalNotificationsBroadcast flutterLocalNotificationsBroadcast =
     FlutterLocalNotificationsBroadcast();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 NotificationAppLaunchDetails notificationAppLaunchDetails;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  notificationAppLaunchDetails = await flutterLocalNotificationsBroadcast
-      .getNotificationAppLaunchDetails();
+  notificationAppLaunchDetails =
+      await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
 
   var initializationSettingsAndroid = AndroidInitializationSettings('app_icon');
-  await flutterLocalNotificationsBroadcast.initialize(
-    initializationSettingsAndroid,
+  var initializationSettingsIOS = IOSInitializationSettings();
+  var initializationSettings = InitializationSettings(
+      initializationSettingsAndroid, initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(
+    initializationSettings,
     onSelectNotification: (String payload) async {
       if (payload != null) {
         debugPrint('notification payload: ' + payload);
