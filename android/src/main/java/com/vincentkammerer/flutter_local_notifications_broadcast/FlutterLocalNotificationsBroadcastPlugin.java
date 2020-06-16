@@ -12,6 +12,8 @@ import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -59,6 +61,47 @@ public class FlutterLocalNotificationsBroadcastPlugin extends FlutterLocalNotifi
       broadcast(call, result);
     } else {
       result.notImplemented();
+    }
+  }
+
+  /*
+   * Makes FlutterLocalNotificationsPlugin private methods accessible
+   * */
+
+  private NotificationDetails extractNotificationDetails(Result result, Map arguments) {
+    try {
+      Method method = FlutterLocalNotificationsPlugin.class
+          .getDeclaredMethod("extractNotificationDetails", Result.class, Map.class);
+      method.setAccessible(true);
+      return (NotificationDetails) method.invoke(this, result, arguments);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+      return null;
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+      return null;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  private Notification createNotification(Context context,
+      NotificationDetails notificationDetails) {
+    try {
+      Method method = FlutterLocalNotificationsPlugin.class
+          .getDeclaredMethod("createNotification", Context.class, NotificationDetails.class);
+      method.setAccessible(true);
+      return (Notification) method.invoke(this, context, notificationDetails);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+      return null;
+    } catch (InvocationTargetException e) {
+      e.printStackTrace();
+      return null;
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+      return null;
     }
   }
 
