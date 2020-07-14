@@ -10,7 +10,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Fetch a WIP version of flutter_local_notifications until 1.5.0 is stable
+  #
+  # This is not really necessary, the last stable version could be used.
+  # But since 1.5.0 has breaking changes, we use the cutting edge version 😎
   flutter_local_notifications:
+    git:
+      url: https://github.com/vkammerer/flutter_local_notifications.git
+      ref: fc55a16efa677689659a583752be30c1b48d6c77
+      path: ./flutter_local_notifications
 
 dev_dependencies:
   flutter_test:

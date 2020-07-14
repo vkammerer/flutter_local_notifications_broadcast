@@ -35,6 +35,7 @@ public class FlutterLocalNotificationsBroadcastPlugin extends FlutterLocalNotifi
   private FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
   private Method extractNotificationDetailsMethod;
   private Method createNotificationMethod;
+  private Exception initializationException;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -51,27 +52,56 @@ public class FlutterLocalNotificationsBroadcastPlugin extends FlutterLocalNotifi
     this.applicationContext = context;
     this.channel = new MethodChannel(messenger, CHANNEL_NAME);
     this.channel.setMethodCallHandler(this);
-
     try {
-      flutterLocalNotificationsPlugin = new FlutterLocalNotificationsPlugin();
+      Class FlutterLocalNotificationPluginClass = Class
+          .forName("com.dexterous.flutterlocalnotifications.FlutterLocalNotificationsPlugin");
+      flutterLocalNotificationsPlugin = (FlutterLocalNotificationsPlugin) FlutterLocalNotificationPluginClass
+          .newInstance();
 
-      Field f1 = flutterLocalNotificationsPlugin.getClass().getDeclaredField("applicationContext");
-      f1.setAccessible(true);
-      f1.set(flutterLocalNotificationsPlugin, this.applicationContext);
+      // TODO: Find way of using getDeclaredField with Android App bundle to avoid relying of the field type
+      Field[] declaredFields = FlutterLocalNotificationPluginClass.getDeclaredFields();
+      Field applicationContextField = null;
+      for (Field f : declaredFields) {
+        if (f.getType().equals(android.content.Context.class)) {
+          applicationContextField = f;
+        }
+      }
+      if (applicationContextField == null) {
+        initializationException = new Exception("applicationContextField lookup failed");
+        return;
+      }
 
-      extractNotificationDetailsMethod = FlutterLocalNotificationsPlugin.class
-          .getDeclaredMethod("extractNotificationDetails", Result.class, Map.class);
+      applicationContextField.setAccessible(true);
+      applicationContextField.set(flutterLocalNotificationsPlugin, this.applicationContext);
+
+      // TODO: Find way of using getDeclaredMethod with Android App bundle to avoid relying of the method type
+      Method[] declaredMethods = FlutterLocalNotificationPluginClass.getDeclaredMethods();
+      for (Method m : declaredMethods) {
+        if (m.getReturnType()
+            .equals(com.dexterous.flutterlocalnotifications.models.NotificationDetails.class)) {
+          extractNotificationDetailsMethod = m;
+        } else if (m.getReturnType().equals(android.app.Notification.class)) {
+          createNotificationMethod = m;
+        }
+      }
+
+      if (extractNotificationDetailsMethod == null) {
+        initializationException = new Exception("extractNotificationDetailsMethod lookup failed");
+        return;
+      }
+      if (createNotificationMethod == null) {
+        initializationException = new Exception("createNotificationMethod lookup failed");
+        return;
+      }
+
       extractNotificationDetailsMethod.setAccessible(true);
-
-      createNotificationMethod = FlutterLocalNotificationsPlugin.class
-          .getDeclaredMethod("createNotification", Context.class, NotificationDetails.class);
       createNotificationMethod.setAccessible(true);
 
-    } catch (NoSuchMethodException e) {
-      e.printStackTrace();
     } catch (IllegalAccessException e) {
       e.printStackTrace();
-    } catch (NoSuchFieldException e) {
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    } catch (InstantiationException e) {
       e.printStackTrace();
     }
   }
@@ -124,9 +154,13 @@ public class FlutterLocalNotificationsBroadcastPlugin extends FlutterLocalNotifi
   }
 
   private void broadcast(MethodCall call, Result result) {
+    if (initializationException != null) {
+      result.error("initializationException", initializationException.getMessage(), null);
+      return;
+    }
     Map<String, Object> arguments = call.arguments();
-    NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
     String broadcastTarget = (String) arguments.get(BROADCAST_TARGET);
+    NotificationDetails notificationDetails = extractNotificationDetails(result, arguments);
     if (notificationDetails != null && !hasInvalidTargetClass(result, broadcastTarget)) {
       broadcastNotification(this.applicationContext, notificationDetails, broadcastTarget);
       result.success(null);
